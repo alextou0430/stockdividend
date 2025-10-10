@@ -1,7 +1,7 @@
 import streamlit as st
 import yfinance as yf
 import pandas as pd
-from datetime import date
+from datetime import datetime, date, timedelta
 
 header = st.container()
 
@@ -94,7 +94,22 @@ def dividendCalculation(ticker, start_date, end_date, start_amount, data, end_pr
     total_cost_without_dividend = 0
     dividend_cost_current_date = 0
     dividends_dict = {str(k)[:10]: v for k, v in orig_dividends_dict.items()}
-    closing_price_start_date = data.loc[start_date][0]
+    if start_date in data.index:
+        print("FOUND START DATE", start_date)
+        closing_price_start_date = data.loc[start_date][0]
+    else:
+        print("not found ................. date:", start_date)
+        while True:
+            converted_start_datetime = pd.to_datetime(start_date) + timedelta(days=1)
+            if converted_start_datetime in data.index:
+                closing_price_start_date = data.loc[converted_start_datetime][0]
+                print("the effective date after increment is:", converted_start_datetime)
+                break
+            else:
+                start_date = converted_start_datetime
+        # print(pd.to_timedelta(start_date) + timedelta(days=1))
+        # print("this???", closing_price_start_date)
+
     num_shares_start = start_amount // closing_price_start_date
     # total_share_count = 0
     mike_current_share = num_shares_start
@@ -106,10 +121,16 @@ def dividendCalculation(ticker, start_date, end_date, start_amount, data, end_pr
     #         print(data['Close'].values[i][j])
     # print(data['Close'].values)
         print(date, dividendCost)
-        # print(data.loc[date])
+        print("HERE -------------------------->>>>>>>>> ")
+        if date in data.index:
+            print("FOUND")
+        else:
+            print("not found ................. date:", date)
+            continue
         # closing_price_start_date = data.loc[start_date][0]
         # num_shares_start = start_amount // closing_price_start_date
         total_cost_without_dividend = num_shares_start * data.loc[date][0]
+        print("THERE CRASH so we don't see this line  -------------------------->>>>>>>>> ")
         dividend_cost_current_date = total_cost_without_dividend * dividendCost
 
         total_current_dividend_cost = (dividend_cost_current_date + total_current_dividend_cost)
