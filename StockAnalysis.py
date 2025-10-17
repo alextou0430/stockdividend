@@ -99,10 +99,10 @@ def dividendCalculation(ticker, start_amount, data, end_price, grand_total_witho
     print("*******************************************")
     print("The stock price per share for your start date was: ", closing_price_on_start_date)
     print("number of shares is: ", number_of_current_shares)
-    print("final stock price", current_stock_price)
+    print("final stock price", end_price)
     print("total leftover is:", left_over_cost)
     # number_of_current_shares += (left_over_cost // current_stock_price)
-    print("Grand total: ", number_of_current_shares * current_stock_price + left_over_cost)
+    print("Grand total: ", number_of_current_shares * end_price + left_over_cost)
     print("*******************************************")
     #*****************dividendsCalculationWrite**************************
     # st.write("Your stock price per share for your start date was: ", closing_price_on_start_date)
@@ -110,7 +110,8 @@ def dividendCalculation(ticker, start_amount, data, end_price, grand_total_witho
     st.write("The number of shares you own after applying dividend reinvestment is:", number_of_current_shares)
     st.write("Your total leftover cost money after reinvesting dividends is: ", left_over_cost)
     st.write("Since it is not ideal to reinvest left over cost every time you have more money than 1 share price, our calculation collects all leftovers and adds it to the grand total at the end.")
-    st.write("Therefore, your final grand total amount of USD is: ", number_of_current_shares * current_stock_price + left_over_cost)
+    st.write("Therefore, your final grand total amount of USD including the starting amount is: ", number_of_current_shares * end_price + left_over_cost)
+    st.write("and the pure profit from your starting price would be: ", (number_of_current_shares * end_price + left_over_cost) - start_amount)
 
     #*****************dividendsCalculationWrite**************************
 
