@@ -9,43 +9,44 @@ with header:
     st.title('Welcome to Alex\'s Stock Analysis !!!')
 
 def display_stock_chart(ticker, start_date, end_date, start_amount):
-    company = yf.Ticker(ticker)
-    company_long_name = company.info['longName']
-    st.write("Description for ", company_long_name)
-    st.write(company.info['longBusinessSummary'])
-    df = company.history(start="1900-01-01")
-    # df = yf.download(tickers=ticker, start=start_date, end=end_date)
-    # pd.set_option("display.max_rows", None)  # Show all rows
-    # pd.set_option("display.max_columns", None)  # Show all columns
-    # print(df)
-    # print("------------------ step 1 -------------------")
-    # print(df.iloc[0], type(df.iloc[0]))
-    # print("------------------ step 2 -------------------")
-    # # print(df.iloc[0].name, type(df.iloc[0].name))
-    # print("------------------step 3---------------------")
-    # # print(df.info())
-    # print("------------------- last -------------------")
-    company_found_date = str(df.iloc[0].name)[0:10]
-    st.write("For", company_long_name, "we have data dating back to ", company_found_date)
-    price_data = yf.download(tickers=ticker, start=start_date, end=end_date)
-    start_price = round(price_data.head(1)['Close'].values[0][0], 2)
-    st.write("Stock closing price for start input date is: ", start_price)
-    end_price = round(price_data.tail(1)['Close'].values[0][0], 2)
-    st.write("Stock closing price for your end date is: ", end_price)
-    st.write("input amount(USD): ", start_amount)
-    number_of_original_share = start_amount // start_price
-    total_cost_without_dividend = round(((start_amount // start_price) * end_price) - (start_price * int(number_of_original_share)), 2)
-    # subtracted the start price * number of shares you have because we want to calculate the cost increase from our original price
-    st.write("The final total share cost increase from start without dividend reinvestment is: ", total_cost_without_dividend, "dollars.")
-    st.write("the number of shares of this value is: ", int(number_of_original_share))
-    st.write("However, including the dividend reinvestment accumulated over time,")
-    dividendCalculation(ticker, start_amount, price_data, end_price, total_cost_without_dividend)
-    st.write("Stock chart from input date range: ", start_date, " to ", end_date)
-    st.line_chart(price_data['Close'])
-    st.write("Dividend payout throughout the history of the company:")
-    dividend_data = yf.Ticker(ticker).dividends
-    orig_dividends_dict = dividend_data.to_dict()
-    st.line_chart(dividend_data)
+    try:
+        print("BEGIN function display_stock_chart ----------------------------------------------------------------")
+        company = yf.Ticker(ticker)
+        print("AFTER")
+        print("Company:", company)
+        print("company info: ", company.info)
+        company_long_name = company.info['longName']
+        st.write("Description for ", company_long_name)
+        st.write(company.info['longBusinessSummary'])
+        df = company.history(start="1900-01-01")
+        company_found_date = str(df.iloc[0].name)[0:10]
+        st.write("For", company_long_name, "we have data dating back to ", company_found_date)
+        price_data = yf.download(tickers=ticker, start=start_date, end=end_date)
+        start_price = round(price_data.head(1)['Close'].values[0][0], 2)
+        st.write("Stock closing price for start input date is: ", start_price)
+        end_price = round(price_data.tail(1)['Close'].values[0][0], 2)
+        st.write("Stock closing price for your end date is: ", end_price)
+        st.write("input amount(USD): ", start_amount)
+        number_of_original_share = start_amount // start_price
+        total_cost_without_dividend = round(((start_amount // start_price) * end_price) - (start_price * int(number_of_original_share)), 2)
+        # subtracted the start price * number of shares you have because we want to calculate the cost increase from our original price
+        st.write("The final total share cost increase from start without dividend reinvestment is: ", total_cost_without_dividend, "dollars.")
+        st.write("the number of shares of this value is: ", int(number_of_original_share))
+        st.write("However, including the dividend reinvestment accumulated over time,")
+        dividendCalculation(ticker, start_amount, price_data, end_price, total_cost_without_dividend)
+        st.write("Stock chart from input date range: ", start_date, " to ", end_date)
+
+        close_price_data_dict = price_data['Close'].to_dict()
+        st.line_chart(close_price_data_dict[ticker])
+
+        st.write("Dividend payout throughout the history of the company:")
+        dividend_data = yf.Ticker(ticker).dividends
+        orig_dividends_dict = dividend_data.to_dict()
+        st.line_chart(dividend_data)
+    except Exception as e:
+        print(f"We caught exception at: {e}")
+        st.write("You inputted an invalid symbol: ", ticker)
+        print("----------------- END EXCEPTION ------------------------------------------------------------")
 
 def dividendCalculation(ticker, start_amount, data, end_price, grand_total_without_dividend):
     company = yf.Ticker(ticker)
@@ -53,13 +54,10 @@ def dividendCalculation(ticker, start_amount, data, end_price, grand_total_witho
     orig_dividends_dict = dividend_data.to_dict()
     left_over_cost = 0
     closing_price_on_start_date = data.iloc[0]["Close"].squeeze()
-    print("CLOSINGPRICESTARTDATE: ", closing_price_on_start_date)
     dividends_dict = {}
     starting_number_shares = round(start_amount // closing_price_on_start_date, 2)
     starting_shares_leftover_money =start_amount - (starting_number_shares * closing_price_on_start_date)
-    print("we have left over: ", starting_shares_leftover_money)
     left_over_cost += starting_shares_leftover_money
-    print("((", starting_number_shares, "))")
     for key, value in orig_dividends_dict.items():
         new_key = str(key)[:10]
         dividends_dict[new_key] = value
@@ -67,43 +65,26 @@ def dividendCalculation(ticker, start_amount, data, end_price, grand_total_witho
     number_of_current_shares = starting_number_shares
     for date, dividendCost in dividends_dict.items():
         if date in data.index:
-            print("current left over cost is:", left_over_cost)
             current_record = data.loc[date]
             current_stock_price = current_record["Close"].squeeze()
             current_share_value = starting_number_shares * current_stock_price
             dividend_amount = dividendCost * number_of_current_shares
-            print("number of cur shares: {{{",number_of_current_shares, "}}}")
-            print("dividendcost", dividendCost)
+
             # we would get the dividend amount for the current date by multiplying
             #the dividend cost by the current number of shares. if the dividend amount
             #is greater than the current closing price for the stock, we buy as much as we can
             #if it is not greater than stock we store it in leftover_cost
             if dividend_amount >= current_stock_price:
             # print("dividend amount is: ", dividend_amount)
-                print("our dividend cost amount is higher than the current stock price! Dividend amount is: ",  dividend_amount, "current_stock_price is: ", current_stock_price)
                 num_shares_bought_with_dividend = dividend_amount // current_stock_price
-                print("we can put ", num_shares_bought_with_dividend, "numbers of shares")
                 number_of_current_shares = number_of_current_shares + num_shares_bought_with_dividend
-                print("we now have, ", number_of_current_shares, "shares.")
                 # left_over_cost = left_over_cost + ((dividend_amount / current_stock_price) - (dividend_amount // current_stock_price))
                 left_over_cost += dividend_amount - (num_shares_bought_with_dividend * current_stock_price)
-                print("leftover money after buying the shares is: ", left_over_cost)
             else:
-                print("The dividend cost is not higher than the current stock price. we will buy no shares.")
                 left_over_cost += dividend_amount
-                print("our left over cost now is:", left_over_cost)
-            print("-----------------------------------------------------------------------------------------")
         else:
             continue
 
-    print("*******************************************")
-    print("The stock price per share for your start date was: ", closing_price_on_start_date)
-    print("number of shares is: ", number_of_current_shares)
-    print("final stock price", end_price)
-    print("total leftover is:", left_over_cost)
-    # number_of_current_shares += (left_over_cost // current_stock_price)
-    print("Grand total: ", number_of_current_shares * end_price + left_over_cost)
-    print("*******************************************")
     #*****************dividendsCalculationWrite**************************
     # st.write("Your stock price per share for your start date was: ", closing_price_on_start_date)
     # st.write("Your final stock price when you cashed out was: ", current_stock_price)
